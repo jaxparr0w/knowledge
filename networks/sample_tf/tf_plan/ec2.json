@@ -1,0 +1,106 @@
+{
+    "format_version": "1.0",
+    "terraform_version": "1.5.0",
+    "planned_values": {
+      "root_module": {
+        "resources": [
+          {
+            "address": "aws_instance.example_instance",
+            "mode": "managed",
+            "type": "aws_instance",
+            "name": "example_instance",
+            "provider_name": "registry.terraform.io/hashicorp/aws",
+            "values": {
+              "ami": "ami-0c55b159cbfafe1f0",
+              "instance_type": "t2.micro",
+              "vpc_security_group_ids": [
+                "${aws_security_group.example_sg.id}"
+              ]
+            }
+          },
+          {
+            "address": "aws_security_group.example_sg",
+            "mode": "managed",
+            "type": "aws_security_group",
+            "name": "example_sg",
+            "provider_name": "registry.terraform.io/hashicorp/aws",
+            "values": {
+              "description": "Allow SSH and HTTP access",
+              "name": "example_security_group",
+              "ingress": [
+                {
+                  "from_port": 22,
+                  "to_port": 22,
+                  "protocol": "tcp",
+                  "cidr_blocks": ["0.0.0.0/0"]
+                },
+                {
+                  "from_port": 80,
+                  "to_port": 80,
+                  "protocol": "tcp",
+                  "cidr_blocks": ["0.0.0.0/0"]
+                }
+              ],
+              "egress": [
+                {
+                  "from_port": 0,
+                  "to_port": 0,
+                  "protocol": "-1",
+                  "cidr_blocks": ["0.0.0.0/0"]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "resource_changes": [
+      {
+        "address": "aws_instance.example_instance",
+        "change": {
+          "actions": ["create"],
+          "before": null,
+          "after": {
+            "ami": "ami-0c55b159cbfafe1f0",
+            "instance_type": "t2.micro",
+            "vpc_security_group_ids": [
+              "${aws_security_group.example_sg.id}"
+            ]
+          }
+        }
+      },
+      {
+        "address": "aws_security_group.example_sg",
+        "change": {
+          "actions": ["create"],
+          "before": null,
+          "after": {
+            "description": "Allow SSH and HTTP access",
+            "ingress": [
+              {
+                "from_port": 22,
+                "to_port": 22,
+                "protocol": "tcp",
+                "cidr_blocks": ["0.0.0.0/0"]
+              },
+              {
+                "from_port": 80,
+                "to_port": 80,
+                "protocol": "tcp",
+                "cidr_blocks": ["0.0.0.0/0"]
+              }
+            ],
+            "egress": [
+              {
+                "from_port": 0,
+                "to_port": 0,
+                "protocol": "-1",
+                "cidr_blocks": ["0.0.0.0/0"]
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+  

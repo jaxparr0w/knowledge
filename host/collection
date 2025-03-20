@@ -1,0 +1,112 @@
+To compare the hashes of files across the two Debian hosts, you can follow these detailed steps:
+
+---
+
+### Step 1: **Generate Hashes**
+1. **Generate SHA256 Hashes** for all files on both hosts:
+   - Host A:
+     ```bash
+     sudo find / -type f -exec sha256sum {} + | sort > /tmp/host_a_hashes.txt
+     ```
+   - Host B:
+     ```bash
+     sudo find / -type f -exec sha256sum {} + | sort > /tmp/host_b_hashes.txt
+     ```
+
+   **Explanation**:
+   - `find / -type f`: Finds all files.
+   - `-exec sha256sum {}`: Computes SHA256 hash for each file.
+   - `| sort`: Ensures the output is sorted for easy comparison.
+
+2. **Exclude Specific Directories**:
+   To skip directories like `/proc`, `/dev`, and `/sys`, modify `find`:
+   ```bash
+   sudo find / \( -path /proc -o -path /dev -o -path /sys \) -prune -o -type f -exec sha256sum {} + | sort > /tmp/host_hashes.txt
+   ```
+
+---
+
+### Step 2: **Transfer Hash Files**
+Transfer the hash files to a central comparison machine:
+```bash
+scp /tmp/host_a_hashes.txt user@comparison_host:/path/to/compare
+scp /tmp/host_b_hashes.txt user@comparison_host:/path/to/compare
+```
+
+---
+
+### Step 3: **Compare Hashes**
+On the comparison machine:
+1. **Use `comm` to Find Differences**:
+   ```bash
+   comm -3 /path/to/compare/host_a_hashes.txt /path/to/compare/host_b_hashes.txt > hash_differences.txt
+   ```
+
+   - `comm -3`: Shows lines unique to each file.
+   - Each line will include the SHA256 hash and the file path.
+
+2. **Optional: Filter Specific Differences**:
+   If you only need files that exist on both systems but have different hashes:
+   ```bash
+   awk '{print $2}' host_a_hashes.txt > host_a_paths.txt
+   awk '{print $2}' host_b_hashes.txt > host_b_paths.txt
+   comm -12 host_a_paths.txt host_b_paths.txt > common_files.txt
+
+   grep -F -f common_files.txt host_a_hashes.txt > filtered_host_a_hashes.txt
+   grep -F -f common_files.txt host_b_hashes.txt > filtered_host_b_hashes.txt
+
+   diff filtered_host_a_hashes.txt filtered_host_b_hashes.txt > differing_hashes.txt
+   ```
+
+---
+
+### Step 4: **Analyze Results**
+1. **View the Differences**:
+   Review `hash_differences.txt` or `differing_hashes.txt`:
+   - Files listed with different hashes have differing content.
+   - Files missing on one host will only appear in one list.
+
+2. **Detailed Analysis**:
+   For specific files:
+   ```bash
+   diff /path/on/host_a/file /path/on/host_b/file
+   ```
+
+---
+
+### Step 5: **Automate the Process**
+Create a script for repeated comparisons:
+```bash
+#!/bin/bash
+
+HOST=$1
+OUTPUT=$2
+
+# Generate hashes
+sudo find / \( -path /proc -o -path /dev -o -path /sys \) -prune -o -type f -exec sha256sum {} + | sort > /tmp/"${HOST}_hashes.txt"
+
+# Transfer to comparison host
+scp /tmp/"${HOST}_hashes.txt" user@comparison_host:/path/to/compare
+
+# Compare
+ssh user@comparison_host "comm -3 /path/to/compare/host_a_hashes.txt /path/to/compare/host_b_hashes.txt > /path/to/compare/hash_differences.txt"
+
+echo "Hash comparison complete. Results saved to ${OUTPUT}."
+```
+
+---
+
+### Step 6: **Advanced Tools for Deeper Comparison**
+1. **Use `rsync` for On-the-Fly Comparison**:
+   ```bash
+   rsync -rcn --checksum --out-format='%n' root@host_a:/ root@host_b:/ > rsync_differences.txt
+   ```
+
+2. **Visualize Differences with `diffoscope`**:
+   ```bash
+   diffoscope /comparison_dir/host_a /comparison_dir/host_b > detailed_hash_diff.txt
+   ```
+
+---
+
+Let me know if you need assistance interpreting the results or automating this process!
